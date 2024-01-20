@@ -1,1 +1,0 @@
-# Grobner_Basis
