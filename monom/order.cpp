@@ -23,8 +23,7 @@ namespace groebner {
         if (first_sum > second_sum) {
             return false;
         }
-        LexicographicalOrder lex;
-        return lex.IsLess(first, second);
+        return LexicographicalOrder::IsLess(first, second);
     }
 
     bool GraduatedReverseLexicographicalOrder::IsLess(const Monomial &first, const Monomial &second) {
@@ -36,7 +35,12 @@ namespace groebner {
         if (first_sum > second_sum) {
             return false;
         }
-        LexicographicalOrder lex;
-        return lex.IsLess(first, second);
+        Degree max_index = std::max(first.GetMaxIndex(), second.GetMaxIndex());
+        for (Index i = max_index; i >= 0; --i) {
+            if (first.GetDegree(i) - second.GetDegree(i) != 0) {
+                return first.GetDegree(i) > second.GetDegree(i);
+            }
+        }
+        return false;
     }
 }
