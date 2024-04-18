@@ -4,21 +4,58 @@
 #include <iterator>
 #include <vector>
 
-template<typename T>
-class SetOfPolynomials {
-public:
-    SetOfPolynomials() = default;
+namespace groebner {
+    template<typename T, typename Order>
+    class SetOfPolynomials {
+    public:
+        using Polynomial = Polynomial<T, Order>;
 
-    SetOfPolynomials(std::unordered_set<Polynomial<T>> polynoms) : polynoms_(polynoms) {};
+        SetOfPolynomials() = default;
 
-    Polynomial<T> Reduction(Polynomial<T> &polynomial);
+        explicit SetOfPolynomials(std::vector<Polynomial> &&polynomials) : polynomials_(std::move(polynomials)) {}
 
-    void Buchberger();
+        friend std::ostream &operator<<(std::ostream &out, const SetOfPolynomials &set_of_polynomials) {
+            for (auto it = set_of_polynomials.cbegin(); it != set_of_polynomials.cend(); ++it) {
+                out << *it << "; ";
+            }
+            return out;
+        }
 
-    bool InIdeal(Polynomial<T> &polynomial);
+        const Polynomial &operator[](size_t index) const {
+            return polynomials_[index];
+        }
 
-    std::unordered_set<Polynomial<T>> GetPolynoms();
+        [[nodiscard]] size_t GetSize() const {
+            return polynomials_.size();
+        }
 
-private:
-    std::unordered_set<Polynomial<T>> polynoms_;
-};
+        typename std::vector<Polynomial>::const_iterator cbegin() const {
+            return polynomials_.cbegin();
+        }
+
+        typename std::vector<Polynomial>::const_iterator cend() const {
+            return polynomials_.cend();
+        }
+
+        typename std::vector<Polynomial>::const_iterator begin() const {
+            return polynomials_.begin();
+        }
+
+        typename std::vector<Polynomial>::const_iterator end() const {
+            return polynomials_.end();
+        }
+
+        void AddPolynomial(const Polynomial &polynomial) {
+            polynomials_.push_back(polynomial);
+        }
+
+        void CleanZeros() {
+            polynomials_.erase(std::remove_if(polynomials_.begin(), polynomials_.end(),
+                                              [](Polynomial &polynomial) { return polynomial.IsZero(); }),
+                               polynomials_.end());
+        }
+
+    private:
+        std::vector<Polynomial> polynomials_;
+    };
+}
