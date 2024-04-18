@@ -1,89 +1,158 @@
 #include "monom.h"
 
-template<typename T>
-int64_t Monomial<T>::MaxIndex() const {
-    int64_t res = -1;
-    for (auto &[index, degree]: vars_) {
-        res = std::max(res, index);
+namespace groebner {
+    Monomial::Monomial(std::unordered_map<Index, Degree> &&vars) {
+        for (auto &[index, degree]: vars) {
+            assert(index >= 0);
+        }
+        vars_ = std::move(vars);
+        CleanZeros();
+        UpdateMaxIndex();
+        UpdateSumOfDegrees();
     }
-    return res;
-}
 
-template<typename T>
-int64_t Monomial<T>::SumOfIndexes() const {
-    int64_t res = 0;
-    for (auto &[index, degree]: vars_) {
-        res += degree;
+    Monomial Monomial::operator*=(const Monomial &other) {
+        for (auto &[index, degree]: other.vars_) {
+            vars_[index] += degree;
+        }
+        UpdateMaxIndex();
+        UpdateSumOfDegrees();
+        return *this;
     }
-    return res;
-}
 
-template <typename T>
-bool Monomial<T>::EqualDegree(const Monomial<T> &other) const {
-    return vars_ == other.GetVars();
-}
-
-template <typename T>
-Monomial<T> Monomial<T>::LCM(const Monomial<T> &other) {
-    Monomial<T> res;
-    res.SetCoef(coef_ * other.GetCoef());
-    std::unordered_map<int64_t, int64_t> vars = vars_;
-    for (auto &[index, degree]: other.GetVars()) {
-        vars[index] += degree;
+    Monomial Monomial::operator/=(const Monomial &other) {
+        for (auto &[index, degree]: other.vars_) {
+            vars_[index] -= degree;
+            assert(vars_[index] >= 0);
+        }
+        CleanZeros();
+        UpdateMaxIndex();
+        UpdateSumOfDegrees();
+        return *this;
     }
-    return res;
-}
 
-template<typename T>
-Monomial<T> operator/(const Monomial<T> &first, const Monomial<T> &second) {
-    Monomial<T> res;
-    res.SetCoef(first.GetCoef() / second.GetCoef());
-    std::unordered_map<int64_t, int64_t> vars;
-    for (auto &[index, degree]: first.GetVars()) {
-        vars[index] = degree - second.GetVars()[index];
+
+    Monomial operator*(const Monomial &first, const Monomial &second) {
+        Monomial res = first;
+        res *= second;
+        return res;
     }
-    res.SetVars(vars);
-    return res;
-}
 
-template<typename T>
-Monomial<T> operator*(const Monomial<T> &first, const Monomial<T> &second) {
-    Monomial<T> res;
-    res.SetCoef(first.GetCoef() * second.GetCoef());
-    std::unordered_map<int64_t, int64_t> vars = first.GetVars();
-    for (auto &[index, degree]: second.GetVars()) {
-        vars[index] += degree;
+    Monomial operator/(const Monomial &first, const Monomial &second) {
+        Monomial res = first;
+        res /= second;
+        return res;
     }
-    res.SetVars(vars);
-    return res;
-}
 
-template <typename T>
-bool Monomial<T>::Divides(Monomial<T> &other) const {
-    for (auto &[index, degree]: other.GetVars()) {
-        if (vars_[index] < degree) {
-            return false;
+    bool operator==(const Monomial &first, const Monomial &second) {
+        for (auto &[index, degree]: first.vars_) {
+            if (degree != second.GetDegree(index)) {
+                return false;
+            }
+        }
+        return std::all_of(second.vars_.begin(), second.vars_.end(), [&](const auto &pair) {
+            const auto [index, degree] = pair;
+            return degree == first.GetDegree(index);
+        });
+    }
+
+    bool operator!=(const Monomial &first, const Monomial &second) {
+        return !(first == second);
+    }
+
+    std::ostream &operator<<(std::ostream &out, const Monomial &monomial) {
+        if (monomial.cbegin() == monomial.cend()) {
+            out << "1";
+            return out;
+        }
+        for (auto it = monomial.cbegin(); it != monomial.cend(); ++it) {
+            if (it != monomial.cbegin()) {
+                out << ' ';
+            }
+            out << "x" << it->first << "^" << it->second;
+        }
+        return out;
+    }
+
+    Monomial LCM(const Monomial &first, const Monomial &second) {
+        Monomial res = first;
+        for (auto it = second.cbegin(); it != second.cend(); ++it) {
+            Index index = it->first;
+            res.SetDegree(index, std::max(first.GetDegree(index), second.GetDegree(index)));
+        }
+        return res;
+    }
+
+    Monomial GCD(const Monomial &first, const Monomial &second) {
+        Monomial res;
+        for (auto it = first.cbegin(); it != first.cend(); ++it) {
+            Index index = it->first;
+            res.SetDegree(index, std::min(first.GetDegree(index), second.GetDegree(index)));
+        }
+        return res;
+    }
+
+    bool Monomial::Divides(const Monomial &other) const {
+        return std::all_of(vars_.begin(), vars_.end(), [&](const auto &pair) {
+            const auto [index, degree] = pair;
+            return degree <= other.GetDegree(index);
+        });
+    }
+
+    Index Monomial::GetMaxIndex() const {
+        return max_index_;
+    }
+
+    Degree Monomial::GetSumOfDegrees() const {
+        return sum_of_degrees_;
+    }
+
+    Degree Monomial::GetDegree(Index index) const {
+        auto it = vars_.find(index);
+        if (it != vars_.end()) {
+            return it->second;
+        } else {
+            return 0;
         }
     }
-    return true;
-}
 
-template<typename T>
-T Monomial<T>::GetCoef() const {
-    return coef_;
-}
+    void Monomial::SetDegree(Index index, Degree degree) {
+        max_index_ = std::max(max_index_, index);
+        sum_of_degrees_ = sum_of_degrees_ - vars_[index] + degree;
+        vars_[index] = degree;
+    }
 
-template<typename T>
-void Monomial<T>::SetCoef(T coef) {
-    coef_ = coef;
-}
+    typename std::unordered_map<Index, Degree>::const_iterator Monomial::cbegin() const {
+        return vars_.cbegin();
+    }
 
-template<typename T>
-std::unordered_map<int64_t, int64_t> Monomial<T>::GetVars() const {
-    return vars_;
-}
+    typename std::unordered_map<Index, Degree>::const_iterator Monomial::cend() const {
+        return vars_.cend();
+    }
 
-template<typename T>
-void Monomial<T>::SetVars(std::unordered_map<int64_t, int64_t> vars) {
-    vars_ = vars;
+    void Monomial::CleanZeros() {
+        for (auto it = vars_.begin(); it != vars_.end();) {
+            if (it->second == 0) {
+                it = vars_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    void Monomial::UpdateMaxIndex() {
+        Index res = -1;
+        for (auto &[index, degree]: vars_) {
+            res = std::max(res, index);
+        }
+        max_index_ = res;
+    }
+
+    void Monomial::UpdateSumOfDegrees() {
+        Degree res = 0;
+        for (auto &[index, degree]: vars_) {
+            res += degree;
+        }
+        sum_of_degrees_ = res;
+    }
 }

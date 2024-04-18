@@ -2,12 +2,19 @@
 
 #include "monom.h"
 
-struct LexicographicalOrder {
-    template<typename T>
-    bool operator()(const Monomial<T> &, const Monomial<T> &) const; // less
-};
+namespace groebner {
+    class LexicographicalOrder {
+    public:
+        [[nodiscard]] static bool IsLess(const Monomial &first, const Monomial &second);
+    };
 
-struct GradedLexicographicOrder {
-    template<typename T>
-    bool operator()(const Monomial<T> &, const Monomial<T> &) const; // less
-};
+    class GraduatedLexicographicalOrder {
+    public:
+        [[nodiscard]] static bool IsLess(const Monomial &first, const Monomial &second);
+    };
+
+    class GraduatedReverseLexicographicalOrder {
+    public:
+        [[nodiscard]] static bool IsLess(const Monomial &first, const Monomial &second);
+    };
+}

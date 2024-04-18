@@ -1,37 +1,43 @@
 #pragma once
 
+#include <algorithm>
+#include <cassert>
+#include <iostream>
+#include <iterator>
 #include <unordered_map>
 
-template<typename T>
-class Monomial {
-public:
-    Monomial() = default;
+namespace groebner {
+    using Index = int64_t;
+    using Degree = int64_t;
 
-    Monomial(T coef, const std::unordered_map<int64_t, int64_t> &vars) : coef_(coef), vars_(vars) {};
+    class Monomial {
+    public:
+        Monomial() = default;
+        explicit Monomial(std::unordered_map<Index, Degree> &&vars);
+        Monomial operator*=(const Monomial &other);
+        Monomial operator/=(const Monomial &other);
+        friend Monomial operator*(const Monomial &first, const Monomial &second);
+        friend Monomial operator/(const Monomial &first, const Monomial &second);
+        friend bool operator==(const Monomial &first, const Monomial &second);
+        friend bool operator!=(const Monomial &first, const Monomial &second);
+        friend std::ostream &operator<<(std::ostream &out, const Monomial &monomial);
+        friend Monomial LCM(const Monomial &first, const Monomial &second);
+        friend Monomial GCD(const Monomial &first, const Monomial &second);
+        [[nodiscard]] bool Divides(const Monomial &other) const;
+        [[nodiscard]] Index GetMaxIndex() const;
+        [[nodiscard]] Degree GetSumOfDegrees() const;
+        [[nodiscard]] Degree GetDegree(Index var_index) const;
+        void SetDegree(Index index, Degree degree);
+        [[nodiscard]] typename std::unordered_map<Index, Degree>::const_iterator cbegin() const;
+        [[nodiscard]] typename std::unordered_map<Index, Degree>::const_iterator cend() const;
 
-    [[nodiscard]] int64_t MaxIndex() const;
+    private:
+        void CleanZeros();
+        void UpdateMaxIndex();
+        void UpdateSumOfDegrees();
 
-    [[nodiscard]] int64_t SumOfIndexes() const;
-
-    bool EqualDegree(const Monomial<T> &other) const;
-
-    Monomial<T> LCM(const Monomial<T> &other);
-
-    friend Monomial<T> operator/(const Monomial<T> &first, const Monomial<T> &second);
-
-    friend Monomial<T> operator*(const Monomial<T> &first, const Monomial<T> &second);
-
-    bool Divides(Monomial<T> &other) const;
-
-    T GetCoef() const;
-
-    void SetCoef(T coef);
-
-    [[nodiscard]] std::unordered_map<int64_t, int64_t> GetVars() const;
-
-    void SetVars(std::unordered_map<int64_t, int64_t> vars);
-
-private:
-    T coef_;
-    std::unordered_map<int64_t, int64_t> vars_;
-};
+        std::unordered_map<Index, Degree> vars_;
+        Index max_index_;
+        Degree sum_of_degrees_;
+    };
+}

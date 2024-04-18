@@ -1,29 +1,42 @@
 #include "order.h"
 
-template<typename T>
-bool LexicographicalOrder::operator()(const Monomial<T> &first, const Monomial<T> &second) const {
-    int64_t max_index = std::max(first.MaxIndex(), second.MaxIndex());
-    for (int64_t i = 0; i <= max_index; ++i) {
-        if (first.GetVars()[i] < second.GetVars()[i]) {
-            return true;
+namespace groebner {
+    bool LexicographicalOrder::IsLess(const Monomial &first, const Monomial &second) {
+        Index max_index = std::max(first.GetMaxIndex(), second.GetMaxIndex());
+        for (Index i = 0; i <= max_index; ++i) {
+            if (first.GetDegree(i) < second.GetDegree(i)) {
+                return true;
+            }
+            if (first.GetDegree(i) > second.GetDegree(i)) {
+                return false;
+            }
         }
-        if (first.GetVars()[i] > second.GetVars()[i]) {
-            return false;
-        }
-    }
-    return false;
-}
-
-template<typename T>
-bool GradedLexicographicOrder::operator()(const Monomial<T> &first, const Monomial<T> &second) const {
-    int64_t first_sum = first.SumOfIndexes();
-    int64_t second_sum = second.SumOfIndexes();
-    if (first_sum < second_sum) {
-        return true;
-    }
-    if (first_sum > second_sum) {
         return false;
     }
-    LexicographicalOrder lex;
-    return lex(first, second);
+
+    bool GraduatedLexicographicalOrder::IsLess(const Monomial &first, const Monomial &second) {
+        Degree first_sum = first.GetSumOfDegrees();
+        Degree second_sum = second.GetSumOfDegrees();
+        if (first_sum < second_sum) {
+            return true;
+        }
+        if (first_sum > second_sum) {
+            return false;
+        }
+        LexicographicalOrder lex;
+        return lex.IsLess(first, second);
+    }
+
+    bool GraduatedReverseLexicographicalOrder::IsLess(const Monomial &first, const Monomial &second) {
+        Degree first_sum = first.GetSumOfDegrees();
+        Degree second_sum = second.GetSumOfDegrees();
+        if (first_sum < second_sum) {
+            return true;
+        }
+        if (first_sum > second_sum) {
+            return false;
+        }
+        LexicographicalOrder lex;
+        return lex.IsLess(first, second);
+    }
 }
