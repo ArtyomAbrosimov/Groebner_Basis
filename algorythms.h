@@ -19,7 +19,7 @@ namespace groebner {
 
         static Polynomial ReducePolynomial(const Polynomial &reducible, const Polynomial &reducing) {
             Polynomial res = reducible;
-            PerformReduction(res, reducing, reducing.GetLeading());
+            PerformReduction(res, reducing);
             return res;
         }
 
@@ -30,10 +30,19 @@ namespace groebner {
         }
 
         static SetOfPolynomials DoBuchberger(const SetOfPolynomials &set_of_polynomials) {
-            SetOfPolynomials res = set_of_polynomials;
-            for (int i = 0; i < set_of_polynomials.GetSize(); ++i) {
+            if (set_of_polynomials.GetSize() == 0) {
+                return {};
+            }
+            SetOfPolynomials res;
+            res.AddPolynomial(*set_of_polynomials.begin());
+            for (const Polynomial &polynomial: set_of_polynomials) {
+                if (!ReducePolynomial(polynomial, res).IsZero()) {
+                    res.AddPolynomial(polynomial);
+                }
+            }
+            for (int i = 0; i < res.GetSize(); ++i) {
                 for (int j = 0; j < i; ++j) {
-                    Polynomial s_polynom = MakeSPolynom(set_of_polynomials[i], set_of_polynomials[j]);
+                    Polynomial s_polynom = MakeSPolynom(res[i], res[j]);
                     Polynomial reduced = ReducePolynomial(s_polynom, res);
                     if (!reduced.IsZero()) res.AddPolynomial(reduced);
                 }
@@ -59,13 +68,14 @@ namespace groebner {
             }
         }
 
-        static void PerformReduction(Polynomial &res, const Polynomial &reducing, const Term &leading) {
+        static void PerformReduction(Polynomial &res, const Polynomial &reducing) {
+            const Term &leading = reducing.GetLeading();
             for (const auto &monom: res) {
                 if (leading.GetMonomial().Divides(monom.GetMonomial())) {
                     Term quotient = monom / leading;
                     Polynomial subtrahend = reducing * quotient;
                     res -= subtrahend;
-                    return PerformReduction(res, reducing, leading);
+                    return PerformReduction(res, reducing);
                 }
             }
         }
