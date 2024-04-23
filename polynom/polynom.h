@@ -3,6 +3,7 @@
 #include <functional>
 #include <set>
 #include "term.h"
+#include "../monom/order.h"
 
 namespace groebner {
     template<typename T, typename Order>
@@ -137,19 +138,21 @@ namespace groebner {
             return !(first == second);
         }
 
-
         friend std::ostream &operator<<(std::ostream &out, const Polynomial &polynomial) {
             if (polynomial.cbegin() == polynomial.cend()) {
                 out << "0";
                 return out;
             }
             for (auto it = polynomial.cbegin(); it != polynomial.cend(); ++it) {
-                out << " + " << *it;
+                if (it != polynomial.cbegin() && it->GetCoefficient() > 0) {
+                    out << " +";
+                }
+                out << " " << *it;
             }
             return out;
         }
 
-        Term GetLeading() const { // хранить отдельно
+        Term GetLeading() const {
             assert(terms_.size() > 0);
             return leading_;
         }

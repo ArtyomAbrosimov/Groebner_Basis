@@ -29,6 +29,10 @@ namespace groebner {
             return polynomials_.size();
         }
 
+        void AddPolynomial(const Polynomial &polynomial) {
+            polynomials_.push_back(polynomial);
+        }
+
         typename std::vector<Polynomial>::const_iterator cbegin() const {
             return polynomials_.cbegin();
         }
@@ -45,17 +49,13 @@ namespace groebner {
             return polynomials_.end();
         }
 
-        void AddPolynomial(const Polynomial &polynomial) {
-            polynomials_.push_back(polynomial);
-        }
-
+    private:
         void CleanZeros() {
             polynomials_.erase(std::remove_if(polynomials_.begin(), polynomials_.end(),
                                               [](Polynomial &polynomial) { return polynomial.IsZero(); }),
                                polynomials_.end());
         }
 
-    private:
         std::vector<Polynomial> polynomials_;
     };
 }
