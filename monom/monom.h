@@ -37,7 +37,7 @@ namespace groebner {
         void UpdateSumOfDegrees();
 
         std::unordered_map<Index, Degree> vars_;
-        Index max_index_;
-        Degree sum_of_degrees_;
+        Index max_index_ = 0;
+        Degree sum_of_degrees_ = 0;
     };
 }

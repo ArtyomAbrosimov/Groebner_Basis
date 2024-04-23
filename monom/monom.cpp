@@ -21,6 +21,7 @@ namespace groebner {
     }
 
     Monomial Monomial::operator/=(const Monomial &other) {
+        assert(other.Divides(*this));
         for (auto &[index, degree]: other.vars_) {
             vars_[index] -= degree;
             assert(vars_[index] >= 0);
