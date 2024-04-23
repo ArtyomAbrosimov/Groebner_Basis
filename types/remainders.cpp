@@ -24,6 +24,7 @@ namespace groebner {
     Remainder operator/(const Remainder &first, const Remainder &second) {
         assert(first.modulus_ == second.modulus_);
         Number inverse = first.FindInverseElement(second.value_);
+        assert(inverse != -1);
         return {(first.value_ * inverse) % first.modulus_, first.modulus_};
     }
 
@@ -55,6 +56,7 @@ namespace groebner {
 
     Remainder operator/(const Remainder &first, const Number &second) {
         Number inverse = first.FindInverseElement(second % first.modulus_);
+        assert(inverse != -1);
         return {(first.value_ * inverse) % first.modulus_, first.modulus_};
     }
 
