@@ -5,6 +5,7 @@
 #include <vector>
 
 namespace groebner {
+    using VectorIndex = size_t;
     template<typename T, typename Order>
     class SetOfPolynomials {
     public:
@@ -21,16 +22,31 @@ namespace groebner {
             return out;
         }
 
-        const Polynomial &operator[](size_t index) const {
+        const Polynomial &operator[](VectorIndex index) const {
             return polynomials_[index];
         }
 
-        [[nodiscard]] size_t GetSize() const {
+        Polynomial &operator=(const Polynomial &other) {
+            if (this != &other) {
+                this = other;
+            }
+            return *this;
+        }
+
+        [[nodiscard]] VectorIndex GetSize() const {
             return polynomials_.size();
         }
 
         void AddPolynomial(const Polynomial &polynomial) {
             polynomials_.push_back(polynomial);
+        }
+
+        void ErasePolynomial(VectorIndex index) {
+            polynomials_.erase(polynomials_.begin() + index);
+        }
+
+        void ChangePolynomial(VectorIndex index, const Polynomial &polynomial) {
+            polynomials_[index] = polynomial;
         }
 
         typename std::vector<Polynomial>::const_iterator cbegin() const {

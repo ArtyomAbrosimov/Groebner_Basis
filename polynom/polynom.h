@@ -19,6 +19,9 @@ namespace groebner {
         }
 
         Polynomial operator+=(const Term &other) {
+            if (other.IsZero()) {
+                return *this;
+            }
             for (Term &term: terms_) {
                 if (AreEqualMonomials(term, other)) {
                     term += other;
@@ -71,6 +74,9 @@ namespace groebner {
         }
 
         Polynomial operator-=(const Polynomial &other) {
+            if (other.IsZero()) {
+                return *this;
+            }
             for (const Term &term: other) {
                 *this -= term;
             }
@@ -129,6 +135,32 @@ namespace groebner {
             return res;
         }
 
+        Polynomial operator/=(T other) {
+            for (Term &term: terms_) {
+                term /= other;
+            }
+            return *this;
+        }
+
+        Polynomial operator*=(T other) {
+            for (Term &term: terms_) {
+                term *= other;
+            }
+            return *this;
+        }
+
+        friend Polynomial operator/(Polynomial &first, T second) {
+            Polynomial res = first;
+            res /= second;
+            return res;
+        }
+
+        friend Polynomial operator*(Polynomial &first, T second) {
+            Polynomial res = first;
+            res *= second;
+            return res;
+        }
+
         friend bool operator==(const Polynomial &first, const Polynomial &second) {
             Polynomial difference = first - second;
             return difference.IsZero();
@@ -144,7 +176,7 @@ namespace groebner {
                 return out;
             }
             for (auto it = polynomial.cbegin(); it != polynomial.cend(); ++it) {
-                if (it != polynomial.cbegin() && it->GetCoefficient() > 0) {
+                if (it != polynomial.cbegin() && it->GetCoefficient() >= 0) {
                     out << " +";
                 }
                 out << " " << *it;
@@ -153,13 +185,16 @@ namespace groebner {
         }
 
         Term GetLeading() const {
-            assert(terms_.size() > 0);
+            if (terms_.size() == 0) {
+                return {};
+            }
             return leading_;
         }
 
-        bool IsZero() {
-            CleanZeros();
-            return terms_.size() == 0;
+        bool IsZero() const {
+            Polynomial test = *this;
+            test.CleanZeros();
+            return test.terms_.size() == 0;
         }
 
         typename std::vector<Term>::const_iterator cbegin() const {

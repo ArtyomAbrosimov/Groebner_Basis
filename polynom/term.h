@@ -60,18 +60,39 @@ namespace groebner {
             return res;
         }
 
-        friend Term operator==(const Term &first, const Term &second) {
+        Term operator/=(T other) {
+            coefficient_ /= other;
+            return *this;
+        }
+
+        Term operator*=(T other) {
+            coefficient_ *= other;
+            return *this;
+        }
+
+        friend Term operator/(Term &first, T second) {
+            Term res = first;
+            res /= second;
+            return res;
+        }
+
+        friend Term operator*(Term &first, T second) {
+            Term res = first;
+            res *= second;
+            return res;
+        }
+
+        friend bool operator==(const Term &first, const Term &second) {
             return first.coefficient_ == second.coefficient_ && first.monomial_ == second.monomial_;
         }
 
-        friend Term operator!=(const Term &first, const Term &second) {
+        friend bool operator!=(const Term &first, const Term &second) {
             return !(first == second);
         }
 
         friend std::ostream &operator<<(std::ostream &out, const Term &term) {
-            out << term.coefficient_;
             if (!term.IsZero()) {
-                out << ' ' << term.monomial_;
+                out << term.coefficient_ << ' ' << term.monomial_;
             }
             return out;
         }
