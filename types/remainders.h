@@ -9,16 +9,29 @@ namespace groebner {
     class Remainder {
     public:
         Remainder(Number value, Number modulus);
+        Remainder operator+=(const Remainder &other);
+        Remainder operator-=(const Remainder &other);
+        Remainder operator*=(const Remainder &other);
+        Remainder operator/=(const Remainder &other);
         friend Remainder operator+(const Remainder &first, const Remainder &second);
         friend Remainder operator-(const Remainder &first, const Remainder &second);
         friend Remainder operator*(const Remainder &first, const Remainder &second);
         friend Remainder operator/(const Remainder &first, const Remainder &second);
+        Remainder operator%=(const Remainder &other);
+        friend Remainder operator%(const Remainder &first, const Remainder &second);
         friend std::strong_ordering operator<=>(const Remainder &first, const Remainder &second);
         friend bool operator==(const Remainder &first, const Remainder &second);
+        friend bool operator!=(const Remainder &first, const Remainder &second);
+        Remainder operator+=(const Number &other);
+        Remainder operator-=(const Number &other);
+        Remainder operator*=(const Number &other);
+        Remainder operator/=(const Number &other);
         friend Remainder operator+(const Remainder &first, const Number &second);
         friend Remainder operator-(const Remainder &first, const Number &second);
         friend Remainder operator*(const Remainder &first, const Number &second);
         friend Remainder operator/(const Remainder &first, const Number &second);
+        Remainder operator%=(const Number &other);
+        friend Remainder operator%(const Remainder &first, const Number &second);
         friend std::strong_ordering operator<=>(const Remainder &first, const Number &second);
         friend bool operator==(const Remainder &first, const Number &second);
         friend bool operator!=(const Remainder &first, const Number &second);

@@ -11,21 +11,21 @@ namespace groebner {
     class Rational {
     public:
         Rational(Numenator numerator, Denomenator denominator);
+        Rational(Numenator numerator);
         Rational() = default;
+        Rational operator+=(const Rational &other);
+        Rational operator-=(const Rational &other);
+        Rational operator*=(const Rational &other);
+        Rational operator/=(const Rational &other);
         friend Rational operator+(const Rational &first, const Rational &second);
         friend Rational operator-(const Rational &first, const Rational &second);
         friend Rational operator*(const Rational &first, const Rational &second);
         friend Rational operator/(const Rational &first, const Rational &second);
+        Rational operator%=(const Rational &other);
+        friend Rational operator%(const Rational &first, const Rational &second);
         friend std::strong_ordering operator<=>(const Rational &first, const Rational &second);
         friend bool operator==(const Rational &first, const Rational &second);
         friend bool operator!=(const Rational &first, const Rational &second);
-        friend Rational operator+(const Rational &first, const Number &second);
-        friend Rational operator-(const Rational &first, const Number &second);
-        friend Rational operator*(const Rational &first, const Number &second);
-        friend Rational operator/(const Rational &first, const Number &second);
-        friend std::strong_ordering operator<=>(const Rational &first, const Number &second);
-        friend bool operator==(const Rational &first, const Number &second);
-        friend bool operator!=(const Rational &first, const Number &second);
         friend std::ostream &operator<<(std::ostream &out, const Rational &rational);
 
     private:
