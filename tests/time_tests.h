@@ -1,8 +1,7 @@
 #pragma once
 
-#include "cyclic.h"
-#include <ctime>
+#include <cstddef>
 
 namespace groebner {
-    void RunTimeTests(int n);
+    void RunTimeTests(size_t max_size);
 }

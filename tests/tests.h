@@ -1,8 +1,7 @@
 #pragma once
 
-#include "time_tests.h"
-#include "correctness_tests.h"
+#include <cstddef>
 
 namespace groebner {
-    void RunTests(int n);
+    void RunTests(size_t max_size);
 }
