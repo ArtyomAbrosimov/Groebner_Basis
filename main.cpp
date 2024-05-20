@@ -1,6 +1,12 @@
 #include "tests/tests.h"
+#include "tests/except.h"
+#include <iostream>
 
 int main() {
-    groebner::RunTests(4);
+    try {
+        groebner::RunTests(4);
+    } catch (...) {
+        except::React();
+    }
     return 0;
 }
