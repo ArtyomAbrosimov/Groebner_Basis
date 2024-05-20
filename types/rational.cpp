@@ -1,41 +1,42 @@
+#include <cassert>
+#include <numeric>
 #include "rational.h"
 
 namespace groebner {
-    Rational::Rational(Numenator numerator, Denomenator denominator = 1) {
-        assert(denominator != 0);
-        numerator_ = numerator;
-        denominator_ = denominator;
+    Rational::Rational(Integer numerator, Integer denominator) : numerator_(numerator), denominator_(denominator) {
+        assert(denominator_ != 0);
         Reduce();
     }
 
-    Rational::Rational(Numenator numerator) {
-        numerator_ = numerator;
-        denominator_ = 1;
+    Rational::Rational(Integer numerator) : numerator_(numerator) {
         Reduce();
     }
 
-    Rational Rational::operator+=(const Rational &other) {
-        numerator_ = numerator_ * other.denominator_ + other.numerator_ * denominator_;
-        denominator_ = denominator_ * other.denominator_;
+    Rational &Rational::operator+=(const Rational &other) {
+        Integer lcm = std::lcm(denominator_, other.denominator_);
+        numerator_ = numerator_ * (lcm / denominator_) + other.numerator_ * (lcm / other.denominator_);
+        denominator_ = lcm;
         Reduce();
         return *this;
     }
 
-    Rational Rational::operator-=(const Rational &other) {
-        numerator_ = numerator_ * other.denominator_ - other.numerator_ * denominator_;
-        denominator_ = denominator_ * other.denominator_;
+    Rational &Rational::operator-=(const Rational &other) {
+        Integer lcm = std::lcm(denominator_, other.denominator_);
+        numerator_ = numerator_ * (lcm / denominator_) - other.numerator_ * (lcm / other.denominator_);
+        denominator_ = lcm;
         Reduce();
         return *this;
     }
 
-    Rational Rational::operator*=(const Rational &other) {
+    Rational &Rational::operator*=(const Rational &other) {
         numerator_ = numerator_ * other.numerator_;
         denominator_ = denominator_ * other.denominator_;
         Reduce();
         return *this;
     }
 
-    Rational Rational::operator/=(const Rational &other) {
+    Rational &Rational::operator/=(const Rational &other) {
+        assert(other != 0);
         numerator_ = numerator_ * other.denominator_;
         denominator_ = denominator_ * other.numerator_;
         Reduce();
@@ -66,19 +67,6 @@ namespace groebner {
         return res;
     }
 
-    Rational Rational::operator%=(const Rational &other) {
-        numerator_ = (numerator_ * other.denominator_) % (other.numerator_ * denominator_);
-        denominator_ = denominator_ * other.denominator_;
-        Reduce();
-        return *this;
-    }
-
-    Rational operator%(const Rational &first, const Rational &second) {
-        Rational res = first;
-        res %= second;
-        return res;
-    }
-
     std::strong_ordering operator<=>(const Rational &first, const Rational &second) {
         return first.numerator_ * second.denominator_ <=> second.numerator_ * first.denominator_;
     }
@@ -100,21 +88,12 @@ namespace groebner {
     }
 
     void Rational::Reduce() {
-        Number divider = GCD(numerator_, denominator_);
+        Integer divider = std::gcd(numerator_, denominator_);
         numerator_ /= divider;
         denominator_ /= divider;
         if (denominator_ < 0) {
             numerator_ = -numerator_;
             denominator_ = -denominator_;
         }
-    }
-
-    Number Rational::GCD(Number first, Number second) {
-        while (second != 0) {
-            Number temp = second;
-            second = first % second;
-            first = temp;
-        }
-        return first;
     }
 }

@@ -1,28 +1,24 @@
 #pragma once
 
-#include <cassert>
 #include <iostream>
 
 namespace groebner {
-    using Numenator = int64_t;
-    using Denomenator = int64_t;
-    using Number = int64_t;
-
     class Rational {
+        using Integer = int64_t;
+
     public:
-        Rational(Numenator numerator, Denomenator denominator);
-        Rational(Numenator numerator);
+        Rational(Integer numerator, Integer denominator);
+        Rational(Integer numerator);
         Rational() = default;
-        Rational operator+=(const Rational &other);
-        Rational operator-=(const Rational &other);
-        Rational operator*=(const Rational &other);
-        Rational operator/=(const Rational &other);
+
+        Rational &operator+=(const Rational &other);
+        Rational &operator-=(const Rational &other);
+        Rational &operator*=(const Rational &other);
+        Rational &operator/=(const Rational &other);
         friend Rational operator+(const Rational &first, const Rational &second);
         friend Rational operator-(const Rational &first, const Rational &second);
         friend Rational operator*(const Rational &first, const Rational &second);
         friend Rational operator/(const Rational &first, const Rational &second);
-        Rational operator%=(const Rational &other);
-        friend Rational operator%(const Rational &first, const Rational &second);
         friend std::strong_ordering operator<=>(const Rational &first, const Rational &second);
         friend bool operator==(const Rational &first, const Rational &second);
         friend bool operator!=(const Rational &first, const Rational &second);
@@ -30,9 +26,8 @@ namespace groebner {
 
     private:
         void Reduce();
-        Number GCD(Number first, Number second);
 
-        Numenator numerator_;
-        Denomenator denominator_;
+        Integer numerator_ = 0;
+        Integer denominator_ = 1;
     };
 }
