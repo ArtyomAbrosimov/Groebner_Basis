@@ -3,17 +3,17 @@
 #include "monom.h"
 
 namespace groebner {
-    class LexicographicalOrder {
+    class Lexicographical {
     public:
         [[nodiscard]] static bool IsLess(const Monomial &first, const Monomial &second);
     };
 
-    class GraduatedLexicographicalOrder {
+    class GraduatedLexicographical {
     public:
         [[nodiscard]] static bool IsLess(const Monomial &first, const Monomial &second);
     };
 
-    class GraduatedReverseLexicographicalOrder {
+    class GraduatedReverseLexicographical {
     public:
         [[nodiscard]] static bool IsLess(const Monomial &first, const Monomial &second);
     };
