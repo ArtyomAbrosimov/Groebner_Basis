@@ -6,30 +6,36 @@
 #include "../monom/order.h"
 
 namespace groebner {
-    template<typename T, typename Order>
+    template<typename T, typename TOrder>
     class Polynomial {
-    public:
         using Term = Term<T>;
+        using TermList = std::vector<Term>;
 
+    public:
         Polynomial() = default;
 
-        explicit Polynomial(std::vector<Term> &&terms, Order order) : terms_(std::move(terms)), order_(order) {
-            CleanZeros();
-            UpdateLeading();
+        explicit Polynomial(TermList &&terms) : terms_(std::move(CleanZeros(terms))) {
+            UpdateLeadingTerm();
         }
 
-        Polynomial operator+=(const Term &other) {
+        Polynomial &operator+=(const Term &other) {
             if (other.IsZero()) {
                 return *this;
             }
             for (Term &term: terms_) {
                 if (AreEqualMonomials(term, other)) {
-                    term += other;
+                    term.AddCoefficient(other.GetCoefficient());
+                    if (term.IsZero()) {
+                        CleanZeros(terms_);
+                        UpdateLeadingTerm();
+                    }
                     return *this;
                 }
             }
             terms_.push_back(other);
-            UpdateLeading();
+            if (TOrder::IsLess(terms_[leading_index_].GetMonomial(), other.GetMonomial())) {
+                leading_index_ = terms_.size() - 1;
+            }
             return *this;
         }
 
@@ -39,12 +45,10 @@ namespace groebner {
             return res;
         }
 
-        Polynomial operator+=(const Polynomial &other) {
+        Polynomial &operator+=(const Polynomial &other) {
             for (const Term &term: other) {
                 *this += term;
             }
-            CleanZeros();
-            UpdateLeading();
             return *this;
         }
 
@@ -54,16 +58,26 @@ namespace groebner {
             return res;
         }
 
-        Polynomial operator-=(const Term &other) {
+        Polynomial &operator-=(const Term &other) {
+            if (other.IsZero()) {
+                return *this;
+            }
             for (Term &term: terms_) {
                 if (AreEqualMonomials(term, other)) {
-                    term -= other;
+                    term.AddCoefficient(-1 * other.GetCoefficient());
+                    if (term.IsZero()) {
+                        CleanZeros(terms_);
+                        UpdateLeadingTerm();
+                    }
                     return *this;
                 }
             }
             Term subtrahend = other;
             subtrahend.SetCoefficient(subtrahend.GetCoefficient() * (-1));
             terms_.push_back(subtrahend);
+            if (TOrder::IsLess(terms_[leading_index_].GetMonomial(), subtrahend.GetMonomial())) {
+                leading_index_ = terms_.size() - 1;
+            }
             return *this;
         }
 
@@ -73,15 +87,10 @@ namespace groebner {
             return res;
         }
 
-        Polynomial operator-=(const Polynomial &other) {
-            if (other.IsZero()) {
-                return *this;
-            }
+        Polynomial &operator-=(const Polynomial &other) {
             for (const Term &term: other) {
                 *this -= term;
             }
-            CleanZeros();
-            UpdateLeading();
             return *this;
         }
 
@@ -91,9 +100,13 @@ namespace groebner {
             return res;
         }
 
-        Polynomial operator*=(const Term &other) {
+        Polynomial &operator*=(const Term &other) {
             for (Term &term: terms_) {
                 term *= other;
+            }
+            if (other.IsZero()) {
+                CleanZeros(terms_);
+                UpdateLeadingTerm();
             }
             return *this;
         }
@@ -114,50 +127,21 @@ namespace groebner {
             for (const Term &term: second) {
                 Polynomial part_of_res = first;
                 part_of_res *= term;
-                res = res + part_of_res;
+                res += part_of_res;
             }
-            res.CleanZeros();
-            res.UpdateLeading();
             return res;
         }
 
-        Polynomial operator/=(const Term &other) {
+        Polynomial &operator/=(const Term &other) {
             for (Term &term: terms_) {
                 term /= other;
             }
-            UpdateLeading();
             return *this;
         }
 
         friend Polynomial operator/(const Polynomial &first, const Term &second) {
             Polynomial res = first;
             res /= second;
-            return res;
-        }
-
-        Polynomial operator/=(T other) {
-            for (Term &term: terms_) {
-                term /= other;
-            }
-            return *this;
-        }
-
-        Polynomial operator*=(T other) {
-            for (Term &term: terms_) {
-                term *= other;
-            }
-            return *this;
-        }
-
-        friend Polynomial operator/(Polynomial &first, T second) {
-            Polynomial res = first;
-            res /= second;
-            return res;
-        }
-
-        friend Polynomial operator*(Polynomial &first, T second) {
-            Polynomial res = first;
-            res *= second;
             return res;
         }
 
@@ -184,56 +168,57 @@ namespace groebner {
             return out;
         }
 
-        Term GetLeading() const {
-            if (terms_.size() == 0) {
-                return {};
-            }
-            return leading_;
+        Term GetLeadingTerm() const {
+            static Term zero{{}, 0};
+            if (terms_.empty())
+                return zero;
+            return terms_[leading_index_];
         }
 
-        bool IsZero() const {
+        [[nodiscard]] bool IsZero() const {
             Polynomial test = *this;
-            test.CleanZeros();
             return test.terms_.size() == 0;
         }
 
-        typename std::vector<Term>::const_iterator cbegin() const {
+        typename TermList::const_iterator cbegin() const {
             return terms_.cbegin();
         }
 
-        typename std::vector<Term>::const_iterator cend() const {
+        typename TermList::const_iterator cend() const {
             return terms_.cend();
         }
 
-        typename std::vector<Term>::const_iterator begin() const {
+        typename TermList::const_iterator begin() const {
             return terms_.begin();
         }
 
-        typename std::vector<Term>::const_iterator end() const {
+        typename TermList::const_iterator end() const {
             return terms_.end();
         }
 
     private:
-        void CleanZeros() {
-            terms_.erase(std::remove_if(terms_.begin(), terms_.end(),
-                                        [](const Term &term) { return term.IsZero(); }), terms_.end());
+        TermList CleanZeros(TermList &terms) {
+            terms.erase(std::remove_if(terms.begin(), terms.end(),
+                                       [](const Term &term) { return term.IsZero(); }), terms.end());
+            return terms;
         }
 
-        void UpdateLeading() {
-            if (terms_.size() == 0) {
+        void UpdateLeadingTerm() {
+            if (terms_.empty()) {
                 return;
             }
             Term res = terms_[0];
-            for (const Term &term: terms_) {
-                if (order_.IsLess(res.GetMonomial(), term.GetMonomial()) && !term.IsZero()) {
-                    res = term;
+            size_t index = 0;
+            for (size_t i = 1; i < terms_.size(); ++i) {
+                if (TOrder::IsLess(res.GetMonomial(), terms_[i].GetMonomial())) {
+                    res = terms_[i];
+                    index = i;
                 }
             }
-            leading_ = res;
+            leading_index_ = index;
         }
 
-        std::vector<Term> terms_;
-        Order order_;
-        Term leading_;
+        TermList terms_;
+        size_t leading_index_ = 0;
     };
 }

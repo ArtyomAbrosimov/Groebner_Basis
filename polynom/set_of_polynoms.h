@@ -1,19 +1,19 @@
 #pragma once
 
-#include "polynom.h"
 #include <iterator>
 #include <vector>
+#include "polynom.h"
 
 namespace groebner {
-    using VectorIndex = size_t;
-    template<typename T, typename Order>
+    template<typename T, typename TOrder>
     class SetOfPolynomials {
     public:
-        using Polynomial = Polynomial<T, Order>;
+        using Polynomial = Polynomial<T, TOrder>;
+        using PolynomList = std::vector<Polynomial>;
 
         SetOfPolynomials() = default;
 
-        explicit SetOfPolynomials(std::vector<Polynomial> &&polynomials) : polynomials_(std::move(polynomials)) {}
+        explicit SetOfPolynomials(PolynomList &&polynomials) : polynomials_(std::move(CleanZeros(polynomials))) {}
 
         friend std::ostream &operator<<(std::ostream &out, const SetOfPolynomials &set_of_polynomials) {
             for (auto it = set_of_polynomials.cbegin(); it != set_of_polynomials.cend(); ++it) {
@@ -22,56 +22,58 @@ namespace groebner {
             return out;
         }
 
-        const Polynomial &operator[](VectorIndex index) const {
+        const Polynomial &operator[](size_t index) const {
             return polynomials_[index];
         }
 
-        Polynomial &operator=(const Polynomial &other) {
-            if (this != &other) {
-                this = other;
-            }
-            return *this;
+        Polynomial &operator[](size_t index) {
+            return polynomials_[index];
         }
 
-        [[nodiscard]] VectorIndex GetSize() const {
+        [[nodiscard]] size_t GetSize() const {
             return polynomials_.size();
         }
 
         void AddPolynomial(const Polynomial &polynomial) {
-            polynomials_.push_back(polynomial);
+            if (!polynomial.IsZero()) {
+                polynomials_.push_back(polynomial);
+            }
         }
 
-        void ErasePolynomial(VectorIndex index) {
+        void AddPolynomial(Polynomial &&polynomial) {
+            if (!polynomial.IsZero()) {
+                polynomials_.push_back(std::move(polynomial));
+            }
+        }
+
+        void ErasePolynomial(size_t index) {
             polynomials_.erase(polynomials_.begin() + index);
         }
 
-        void ChangePolynomial(VectorIndex index, const Polynomial &polynomial) {
-            polynomials_[index] = polynomial;
-        }
-
-        typename std::vector<Polynomial>::const_iterator cbegin() const {
+        typename PolynomList::const_iterator cbegin() const {
             return polynomials_.cbegin();
         }
 
-        typename std::vector<Polynomial>::const_iterator cend() const {
+        typename PolynomList::const_iterator cend() const {
             return polynomials_.cend();
         }
 
-        typename std::vector<Polynomial>::const_iterator begin() const {
+        typename PolynomList::const_iterator begin() const {
             return polynomials_.begin();
         }
 
-        typename std::vector<Polynomial>::const_iterator end() const {
+        typename PolynomList::const_iterator end() const {
             return polynomials_.end();
         }
 
     private:
-        void CleanZeros() {
-            polynomials_.erase(std::remove_if(polynomials_.begin(), polynomials_.end(),
-                                              [](Polynomial &polynomial) { return polynomial.IsZero(); }),
-                               polynomials_.end());
+        PolynomList &CleanZeros(PolynomList &polynomials) {
+            polynomials.erase(std::remove_if(polynomials.begin(), polynomials.end(),
+                                             [](Polynomial &polynomial) { return polynomial.IsZero(); }),
+                              polynomials.end());
+            return polynomials;
         }
 
-        std::vector<Polynomial> polynomials_;
+        PolynomList polynomials_;
     };
 }

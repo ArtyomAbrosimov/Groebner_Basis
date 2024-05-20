@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cassert>
+#include <numeric>
 #include "../monom/monom.h"
 #include "../types//rational.h"
 #include "../types/remainders.h"
@@ -10,42 +12,29 @@ namespace groebner {
     public:
         Term() = default;
 
-        Term(Monomial &monomial, T coefficient) : monomial_(monomial), coefficient_(coefficient) {}
-
-        Term operator+=(const Term &other) {
-            assert(AreEqualMonomials(*this, other));
-            coefficient_ += other.coefficient_;
-            return *this;
+        Term(Monomial &monomial, T coefficient) : monomial_(monomial), coefficient_(coefficient) {
+            CheckZero();
         }
 
-        Term operator-=(const Term &other) {
-            assert(AreEqualMonomials(*this, other));
-            coefficient_ -= other.coefficient_;
-            return *this;
+        Term(Monomial &&monomial, T coefficient) : monomial_(std::move(monomial)), coefficient_(coefficient) {
+            CheckZero();
         }
 
-        Term operator*=(const Term &other) {
+        Term(T coefficient) : coefficient_(std::move(coefficient)) {}
+
+        Term &operator*=(const Term &other) {
             coefficient_ *= other.coefficient_;
             monomial_ *= other.monomial_;
+            CheckZero();
             return *this;
         }
 
-        Term operator/=(const Term &other) {
+        Term &operator/=(const Term &other) {
+            assert(other.monomial_.IsDivisorOf(monomial_));
+            assert(!other.IsZero());
             coefficient_ /= other.coefficient_;
             monomial_ /= other.monomial_;
             return *this;
-        }
-
-        friend Term operator+(const Term &first, const Term &second) {
-            Term res = first;
-            res += second;
-            return res;
-        }
-
-        friend Term operator-(const Term &first, const Term &second) {
-            Term res = first;
-            res -= second;
-            return res;
         }
 
         friend Term operator*(const Term &first, const Term &second) {
@@ -60,13 +49,15 @@ namespace groebner {
             return res;
         }
 
-        Term operator/=(T other) {
+        Term &operator/=(T other) {
+            assert(other != 0);
             coefficient_ /= other;
             return *this;
         }
 
-        Term operator*=(T other) {
+        Term &operator*=(T other) {
             coefficient_ *= other;
+            CheckZero();
             return *this;
         }
 
@@ -97,24 +88,13 @@ namespace groebner {
             return out;
         }
 
-        friend Term LCM(const Term &first, const Term &second) {
-            Monomial res_monomial = LCM(first.monomial_, second.monomial_);
-            T res_coefficient = CoefLCM(first.coefficient_, second.coefficient_);
-            return Term(res_monomial, res_coefficient);
-        }
-
-        friend Term GCD(const Term &first, const Term &second) {
-            Monomial res_monomial = GCD(first.monomial_, second.monomial_);
-            T res_coefficient = CoefGCD(first.coefficient_, second.coefficient_);
-            return Term(res_monomial, res_coefficient);
+        void AddCoefficient(T other) {
+            coefficient_ += other;
+            CheckZero();
         }
 
         friend bool AreEqualMonomials(const Term &first, const Term &other) {
             return first.monomial_ == other.monomial_;
-        }
-
-        bool Divides(const Term &other) const {
-            return monomial_.Divides(other.monomial_);
         }
 
         [[nodiscard]] bool IsZero() const {
@@ -130,24 +110,17 @@ namespace groebner {
         }
 
         void SetCoefficient(T coefficient) {
-            coefficient_ = coefficient;
+            coefficient_ = std::move(coefficient);
         }
 
     private:
-        static T CoefGCD(T first, T second) {
-            while (second != 0) {
-                T temp = second;
-                second = first % second;
-                first = temp;
+        void CheckZero() {
+            if (coefficient_ == 0) {
+                monomial_ = Monomial();
             }
-            return first;
-        }
-
-        static T CoefLCM(T first, T second) {
-            return (first * second) / CoefGCD(first, second);
         }
 
         Monomial monomial_;
-        T coefficient_;
+        T coefficient_ = 1;
     };
 }
